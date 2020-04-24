@@ -1,13 +1,20 @@
 import csv
 import numpy as np 
-import math
+from math import sqrt
+from math import pi
+from math import exp
 import sys
+from statistics import mean
 
 def convert(x):
     try:
         return float(x)
     except ValueError:
-        return x.title()
+        if x == 'yes':
+            return 1
+        else: 
+            return 0
+        
 
 def extract(input_file):
     data = []
@@ -21,7 +28,47 @@ def extract(input_file):
     data = [[convert(element) for element in entry] for entry in data]
 
     return data
-# def NB(training_input,tesing_input):
+def separate_by_class(dataset):
+	separated = dict()
+	for i in range(len(dataset)):
+		vector = dataset[i]
+		class_value = vector[-1]
+		if (class_value not in separated):
+			separated[class_value] = list()
+		separated[class_value].append(vector)
+	return separated
+
+def summarize_by_class(dataset):
+	separated = separate_by_class(dataset)
+	summaries = dict()
+	for class_value, rows in separated.items():
+		summaries[class_value] = summarize_dataset(rows)
+	return summaries
+
+def summarize_dataset(dataset):
+	summaries = [(mean(column), stdev(column), len(column)) for column in zip(*dataset)]
+	del(summaries[-1])
+	return summaries
+
+def mean(numbers):
+	return sum(numbers)/float(len(numbers))
+
+def pdf(x, mean, stdev):
+	exponent = exp(-((x-mean)**2 / (2 * stdev**2 )))
+	return (1 / (sqrt(2 * pi) * stdev)) * exponent
+
+def stdev(numbers):
+	avg = mean(numbers)
+	variance = sum([(x-avg)**2 for x in numbers]) / float(len(numbers)-1)
+	return sqrt(variance)
+
+def NB(training_input,tesing_input):
+    mean = mean(training_input)
+    sd = stdev(training_input,mean)
+    #have to figure out what to do next
+    no_yes = 'asa'
+    return 1
+
     
 # def KNN(k,training_data,tesing_input):
    
@@ -35,8 +82,7 @@ if __name__ == "__main__":
     algorithm = sys.argv[3]
     training_input = extract(training_data)
     tesing_input = extract(testing_data)
-    
-    print(training_input)
+   
     if algorithm == 'NB':
        result = NB(training_input,tesing_input)
     elif 'NN' in algorithm:
