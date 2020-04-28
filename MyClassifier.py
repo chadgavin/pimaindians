@@ -1,9 +1,9 @@
 import csv
 import numpy as np 
-# from math import sqrt
-# from math import pi
-# from math import exp
-import math
+from math import sqrt
+from math import pi
+from math import exp
+import math 
 import sys
 from statistics import mean
 
@@ -54,21 +54,58 @@ def summarize_dataset(dataset):
 def mean(numbers):
 	return sum(numbers)/float(len(numbers))
 
-def pdf(x, mean, stdev):
-	exponent = exp(-((x-mean)**2 / (2 * stdev**2 )))
-	return (1 / (sqrt(2 * pi) * stdev)) * exponent
+def pdf(x,mean,sd):
+    try:
+        value_of_exp = (((x-mean)/sd) **2) * (-1/2)
+        value = (1/(sd * sqrt(2 * pi)))* exp(value_of_exp)
+        return value
+    except ZeroDivisionError:
+        return 0
+
+def class_prob(summaries,row):
+    total_rows = sum([summaries[label][0][2] for label in summaries])
+    probabilities = dict()
+    for class_value, class_summaries in summaries.items():
+        probabilities[class_value] = summaries[class_value][0][2]/float(total_rows)
+        for i in range(len(class_summaries)):
+            mean, stdev, _ = class_summaries[i]
+            probabilities[class_value] *= pdf(row[i], mean, stdev)
+    return probabilities
+
+
 
 def stdev(numbers):
-	avg = mean(numbers)
-	variance = sum([(x-avg)**2 for x in numbers]) / float(len(numbers)-1)
-	return sqrt(variance)
+    avg = mean(numbers)
+    variance = sum([(x-avg)**2 for x in numbers]) / float(len(numbers)-1)
+    sd = sqrt(variance)
+    
+    return sd
+
+
+def predict(summaries, row):
+    probabilities = class_prob(summaries, row)
+    best_label, best_prob = None, -1
+    for class_value, probability in probabilities.items():
+        if best_label is None or probability > best_prob:
+            best_prob = probability
+            best_label = class_value
+        if probability == 0.5:
+            return 1
+    
+    return best_label
+
 
 def NB(training_input,tesing_input):
-    mean = mean(training_input)
-    sd = stdev(training_input,mean)
-    #have to figure out what to do next
-    no_yes = 'asa'
-    return 1
+    seperated = summarize_by_class(training_input)
+    result = []
+    for i in tesing_input:
+        outcome = predict(seperated,i)
+        if outcome == 1:
+            print('yes')
+        elif outcome == 0:
+            print('no')
+       
+        
 
 def euclidean_distance(point1 , point2):
     squared_distance_sum = 0
@@ -112,15 +149,15 @@ def main(argv):
 
 if __name__ == "__main__":
     results =[]
-    training_data = sys.argv[3]
-    testing_data = sys.argv[4]
-    algorithm = sys.argv[5]
+    training_data = sys.argv[1]
+    testing_data = sys.argv[2]
+    algorithm = sys.argv[3]
     training_input = extract(training_data)
     testing_input = extract(testing_data)
 
 
     if algorithm == 'NB':
-       result = NB(training_input,tesing_input)
+       result = NB(training_input,testing_input)
     elif 'NN' in algorithm:
        k = int(algorithm.strip("NN"))
        for i in testing_input:
