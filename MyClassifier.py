@@ -5,6 +5,7 @@ from math import pi
 from math import exp
 import math 
 import sys
+import random
 from statistics import mean
 
 def convert(x):
@@ -72,7 +73,34 @@ def class_prob(summaries,row):
             probabilities[class_value] *= pdf(row[i], mean, stdev)
     return probabilities
 
+def split(filename):
+    a = extract(filename)
+    yes_list = []
+    no_list = []
+    count = len(a)
+    count_of_yes = 0
+    count_of_no = 0
+    folds = 10
+    for i in a:
+        if i[-1] == 1:
+            count_of_yes +=1
+            yes_list.append(i)
+        elif i[-1] == 0:
+            no_list.append(i)
+            count_of_no +=1
+    
+    no_of_entries_in_each_fold = count/folds
+    no_of_yes_in_each_fold = math.floor(count_of_yes/folds)
+    no_of_no_in_each_fold = math.floor(count_of_no/folds)
 
+    shuffled_yes_list = yes_list[:]
+    shuffled_no_list = no_list[:]
+    random.shuffle(shuffled_yes_list)
+    random.shuffle(shuffled_no_list)
+    # have to do up adding into folds 
+
+    
+        
 
 def stdev(numbers):
     avg = mean(numbers)
@@ -105,7 +133,7 @@ def NB(training_input,tesing_input):
         elif outcome == 0:
             print('no')
        
-        
+      
 
 def euclidean_distance(point1 , point2):
     squared_distance_sum = 0
@@ -154,6 +182,7 @@ if __name__ == "__main__":
     algorithm = sys.argv[3]
     training_input = extract(training_data)
     testing_input = extract(testing_data)
+    split("pima.csv")
 
 
     if algorithm == 'NB':
