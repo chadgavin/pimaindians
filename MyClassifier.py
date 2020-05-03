@@ -1,3 +1,8 @@
+#Source referenced from:
+#  https://towardsdatascience.com/na%C3%AFve-bayes-from-scratch-using-python-only-no-fancy-frameworks-a1904b37222d
+#  https://jakevdp.github.io/PythonDataScienceHandbook/05.05-naive-bayes.html
+#  https://dzone.com/articles/naive-bayes-tutorial-naive-bayes-classifier-in-pyt
+#  https://www.edureka.co/blog/naive-bayes-tutorial/
 import csv
 import numpy as np 
 from math import sqrt
