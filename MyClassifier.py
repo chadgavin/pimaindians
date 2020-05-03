@@ -93,14 +93,40 @@ def split(filename):
     no_of_yes_in_each_fold = math.floor(count_of_yes/folds)
     no_of_no_in_each_fold = math.floor(count_of_no/folds)
 
-    shuffled_yes_list = yes_list[:]
-    shuffled_no_list = no_list[:]
-    random.shuffle(shuffled_yes_list)
-    random.shuffle(shuffled_no_list)
-    # have to do up adding into folds 
+    random.shuffle(yes_list)
+    random.shuffle(no_list)
 
-    
-        
+    buckets = [[] for i in range(10)]
+    for i in range(10):
+        for num_yes in range(no_of_yes_in_each_fold):
+            buckets[i].append(yes_list.pop())
+        for num_no in range(no_of_no_in_each_fold):
+            buckets[i].append(no_list.pop())
+        random.shuffle(buckets[i])
+
+# Ensure the remainder of the elements
+    if yes_list:
+        for i in range(len(yes_list)):
+            buckets[i].append(yes_list.pop())
+            random.shuffle(buckets[i])
+    elif no_list:
+        for i in range(len(no_list)):
+            buckets[i].append(no_list.pop())
+            random.shuffle(buckets[i])
+
+    try:
+        file = open("pima-folds.csv",mode= 'w',newline='')
+
+        with file:
+            write = csv.writer(file)
+            for i in range(len(buckets)):
+                write.writerow('fold' + str(i+1))
+                for j in buckets[i]:
+                    write.writerow(j)
+    except:
+        print("Error with Pima-folds.csv")
+
+
 
 def stdev(numbers):
     avg = mean(numbers)
@@ -177,13 +203,12 @@ def main(argv):
 
 if __name__ == "__main__":
     results =[]
-    training_data = sys.argv[1]
-    testing_data = sys.argv[2]
-    algorithm = sys.argv[3]
+    training_data = sys.argv[3]
+    testing_data = sys.argv[4]
+    algorithm = sys.argv[5]
     training_input = extract(training_data)
     testing_input = extract(testing_data)
-    split("pima.csv")
-
+    # split("pima.csv")
 
     if algorithm == 'NB':
        result = NB(training_input,testing_input)
@@ -194,4 +219,5 @@ if __name__ == "__main__":
 
     for i in results:
         print(i)
+
 
