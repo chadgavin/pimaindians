@@ -167,9 +167,9 @@ def NB(training_input,tesing_input):
     for i in tesing_input:
         outcome = predict(seperated,i)
         if outcome == 1:
-            print('yes')
+            return "yes"
         elif outcome == 0:
-            print('no')
+            return "no"
        
       
 
@@ -209,6 +209,7 @@ def KNN(k,training_data,testing_input):
     elif yes_count == no_count:
         return "yes"
 
+<<<<<<< HEAD
 def average_cal(itr):
     return sum(itr) / len(itr)
 
@@ -277,8 +278,10 @@ def ten_fold_cross_validation(filename,algo):
     return average_cal(overall_accuracy)
 
 
+=======
+>>>>>>> e608049541c2249e38ff9ad42b9cc6711def9ee0
 def main(argv):
-	print('a')
+    print('a')
 
 if __name__ == "__main__":
     results =[]
@@ -287,12 +290,12 @@ if __name__ == "__main__":
     algorithm = sys.argv[5]
     training_input = extract(training_data)
     testing_input = extract(testing_data)
-    # split("pima.csv")
 
     print(ten_fold_cross_validation(training_data,algorithm))
 
     if algorithm == 'NB':
-       result = NB(training_input,testing_input)
+        for i in testing_input:
+            results.append(NB(training_input,testing_input))
     elif 'NN' in algorithm:
        k = int(algorithm.strip("NN"))
        for i in testing_input:
