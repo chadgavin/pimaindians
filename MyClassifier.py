@@ -34,7 +34,6 @@ def extract(input_file):
     data = [[convert(element) for element in entry] for entry in data]
     return data
 
-
 def separate_by_class(dataset):
 	separated = dict()
 	for i in range(len(dataset)):
@@ -104,19 +103,27 @@ def split(filename):
     buckets = [[] for i in range(10)]
     for i in range(10):
         for num_yes in range(no_of_yes_in_each_fold):
-            buckets[i].append(yes_list.pop())
+            holder = yes_list.pop()
+            holder[-1] = "yes"
+            buckets[i].append(holder)
         for num_no in range(no_of_no_in_each_fold):
-            buckets[i].append(no_list.pop())
+            holder = no_list.pop()
+            holder[-1] = "no"
+            buckets[i].append(holder)
         random.shuffle(buckets[i])
 
 # Ensure the remainder of the elements
     if yes_list:
         for i in range(len(yes_list)):
-            buckets[i].append(yes_list.pop())
+            holder = yes_list.pop()
+            holder[-1] = "yes"
+            buckets[i].append(holder)
             random.shuffle(buckets[i])
     elif no_list:
         for i in range(len(no_list)):
-            buckets[i].append(no_list.pop())
+            holder = no_list.pop()
+            holder[-1] = "no"
+            buckets[i].append(holder)
             random.shuffle(buckets[i])
 
     try:
@@ -125,21 +132,21 @@ def split(filename):
         with file:
             write = csv.writer(file)
             for i in range(len(buckets)):
-                write.writerow('fold' + str(i+1))
+                if i>0:
+                    write.writerow('fold' + str(i+1))
+                else:
+                    write.writerow('fold' + str(i + 1))
                 for j in buckets[i]:
                     write.writerow(j)
     except:
         print("Error with Pima-folds.csv")
 
 
-
 def stdev(numbers):
     avg = mean(numbers)
     variance = sum([(x-avg)**2 for x in numbers]) / float(len(numbers)-1)
     sd = sqrt(variance)
-    
     return sd
-
 
 def predict(summaries, row):
     probabilities = class_prob(summaries, row)
@@ -202,6 +209,73 @@ def KNN(k,training_data,testing_input):
     elif yes_count == no_count:
         return "yes"
 
+def average_cal(itr):
+    return sum(itr) / len(itr)
+
+def strip_end(data):
+    result = []
+    for i in range(len(data)):
+        result.append(data[i][-1])
+        data[i] = data[i][:-1]
+
+    return data,result
+
+
+def ten_fold_cross_validation(filename,algo):
+
+    lines = extract(filename)
+
+    input_buckets = [[] for i in range(10)]
+    checker = False
+    k = 0
+    for line in lines[1:]:
+        if line.count(0) == 9 and checker == False:
+            k+=1
+            checker = True
+            continue
+        elif line.count(0) == 9 and checker == True:
+            checker = False
+            continue
+        else:
+            input_buckets[k].append(line)
+
+    overall_accuracy = []
+
+    for i in range(10):
+        internal_results = []
+        testing_set,actual_result = strip_end(input_buckets[i])
+        if i != 9:
+            training_set = input_buckets[:i] + input_buckets[i+1:]
+        else:
+            training_set = input_buckets[:i]
+
+        #flatten training_set so that its a row of values only
+        training_set = [e for sl in training_set for e in sl]
+
+        if algo == 'NB':
+            internal_results.append(NB(training_set,testing_set))
+
+        elif 'NN' in algo:
+            k = int(algorithm.strip("NN"))
+            for input in testing_set:
+                internal_results.append(KNN(k, training_set, input))
+
+        sum_correct = 0
+        num_examples = len(internal_results)
+        for i in range(len(internal_results)):
+            if internal_results[i] == 'yes' and actual_result[i] == 1:
+                sum_correct +=1
+            elif internal_results[i] == 'no' and actual_result[i] == 0:
+                sum_correct += 1
+            else:
+                continue
+
+        accuracy = sum_correct/num_examples
+        overall_accuracy.append(accuracy)
+        sum_correct = 0
+
+    return average_cal(overall_accuracy)
+
 
 def main(argv):
 	print('a')
@@ -215,6 +289,8 @@ if __name__ == "__main__":
     testing_input = extract(testing_data)
     # split("pima.csv")
 
+    print(ten_fold_cross_validation(training_data,algorithm))
+
     if algorithm == 'NB':
        result = NB(training_input,testing_input)
     elif 'NN' in algorithm:
@@ -224,5 +300,3 @@ if __name__ == "__main__":
 
     for i in results:
         print(i)
-
-
