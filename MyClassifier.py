@@ -10,6 +10,8 @@ from math import pi
 from math import exp
 import math 
 import sys
+import itertools
+from numpy import array
 import random
 from statistics import mean
 
@@ -44,39 +46,77 @@ def separate_by_class(dataset):
 		separated[class_value].append(vector)
 	return separated
 
-def summarize_by_class(dataset):
-	separated = separate_by_class(dataset)
-	summaries = dict()
-	for class_value, rows in separated.items():
-		summaries[class_value] = summarize_dataset(rows)
-	return summaries
 
 def summarize_dataset(dataset):
-	summaries = [(mean(column), stdev(column), len(column)) for column in zip(*dataset)]
-	del(summaries[-1])
-	return summaries
+    class_values = {}
+    class_values['yes'] = []
+    class_values['no'] = []
+
+    for i in range(len(dataset.get(1))):
+        class_values["yes"].append([(mean(column), stdev(column), len(column)) for column in zip(*dataset.get(1))])
+    for i in  range(len(dataset.get(0))):
+        class_values["no"].append([(mean(column), stdev(column), len(column)) for column in zip(*dataset.get(0))])
+    for row in class_values["no"]:
+        del(row[-1])
+    for row in class_values["yes"]:
+        del(row[-1])
+    return class_values
 
 def mean(numbers):
-	return sum(numbers)/float(len(numbers))
+    return sum(numbers)/float(len(numbers))
 
-def pdf(x,mean,sd):
-    try:
-        value_of_exp = (((x-mean)/sd) **2) * (-1/2)
-        value = (1/(sd * sqrt(2 * pi)))* exp(value_of_exp)
-        return value
-    except ZeroDivisionError:
+
+def stdev(numbers):
+    if len(numbers) <2 :
         return 0
+    avg = mean(numbers)
+    variance = sum([(x-avg)**2 for x in numbers]) / float(len(numbers)-1)
+    sd = sqrt(variance)
+    return sd
 
-def class_prob(summaries,row):
-    total_rows = sum([summaries[label][0][2] for label in summaries])
-    probabilities = dict()
-    for class_value, class_summaries in summaries.items():
-        probabilities[class_value] = summaries[class_value][0][2]/float(total_rows)
-        for i in range(len(class_summaries)):
-            mean, stdev, _ = class_summaries[i]
-            probabilities[class_value] *= pdf(row[i], mean, stdev)
-    return probabilities
+def pdf(x, mean, stdev):
+    if stdev == 0:
+        return 1
+    exponent = exp(-((x-mean)**2 / (2 * stdev**2)))
+    return (1 / (sqrt(2 * pi) * stdev)) * exponent
 
+def class_prob(mean_var_of_all_colums_yes,mean_var_of_all_colums_no, row, prob_yes, prob_no,total_rows):
+    probabilities = {}
+    probabilities['yes'] = prob_yes
+    probabilities['no'] = prob_no
+    for i in range(len(mean_var_of_all_colums_yes)):
+        probabilities["yes"] *= pdf(row[i], mean_var_of_all_colums_yes[i][0], mean_var_of_all_colums_yes[i][1])
+    for i in range(len(mean_var_of_all_colums_no)):
+        probabilities["no"] *= pdf(row[i], mean_var_of_all_colums_no[i][0], mean_var_of_all_colums_no[i][1])
+    if probabilities["yes"] >= probabilities["no"]:
+        return 'yes'
+    else:
+        return 'no'
+
+def predict(summaries, row):
+    probabilities = class_prob(summaries, row)
+    best_label, best_prob = None, -1
+    for class_value, probability in probabilities.items():
+        if best_label is None or probability > best_prob:
+            best_prob = probability
+            best_label = class_value
+        if probability == 0.5:
+            return 1
+    
+    return best_label
+
+def NB(training_input,input):
+    seperated = separate_by_class(training_input)
+    result = []
+    prob_yes =  len(seperated.get(1)) / (len(seperated.get(1)) + len(seperated.get(0)))
+    prob_no = len(seperated.get(0)) / (len(seperated.get(1)) + len(seperated.get(0)))
+    summarize_training = summarize_dataset(seperated)
+    total_rows = int(summarize_training['yes'][0][0][2]) + int(summarize_training['no'][0][0][2])
+    mean_var_of_all_colums_yes = summarize_training['yes'][0]
+    mean_var_of_all_colums_no = summarize_training['no'][0]
+    for row in input:
+        result.append(class_prob(mean_var_of_all_colums_yes,mean_var_of_all_colums_no, row, prob_yes, prob_no,total_rows))
+    return(result)
 def split(filename):
     a = extract(filename)
     yes_list = []
@@ -142,36 +182,6 @@ def split(filename):
         print("Error with Pima-folds.csv")
 
 
-def stdev(numbers):
-    avg = mean(numbers)
-    variance = sum([(x-avg)**2 for x in numbers]) / float(len(numbers)-1)
-    sd = sqrt(variance)
-    return sd
-
-def predict(summaries, row):
-    probabilities = class_prob(summaries, row)
-    best_label, best_prob = None, -1
-    for class_value, probability in probabilities.items():
-        if best_label is None or probability > best_prob:
-            best_prob = probability
-            best_label = class_value
-        if probability == 0.5:
-            return 1
-    
-    return best_label
-
-
-def NB(training_input,tesing_input):
-    seperated = summarize_by_class(training_input)
-    result = []
-    for i in tesing_input:
-        outcome = predict(seperated,i)
-        if outcome == 1:
-            return "yes"
-        elif outcome == 0:
-            return "no"
-       
-      
 
 def euclidean_distance(point1 , point2):
     squared_distance_sum = 0
@@ -209,7 +219,6 @@ def KNN(k,training_data,testing_input):
     elif yes_count == no_count:
         return "yes"
 
-<<<<<<< HEAD
 def average_cal(itr):
     return sum(itr) / len(itr)
 
@@ -252,15 +261,16 @@ def ten_fold_cross_validation(filename,algo):
 
         #flatten training_set so that its a row of values only
         training_set = [e for sl in training_set for e in sl]
-
+        
         if algo == 'NB':
+            
             internal_results.append(NB(training_set,testing_set))
 
         elif 'NN' in algo:
             k = int(algorithm.strip("NN"))
             for input in testing_set:
                 internal_results.append(KNN(k, training_set, input))
-
+        
         sum_correct = 0
         num_examples = len(internal_results)
         for i in range(len(internal_results)):
@@ -278,28 +288,24 @@ def ten_fold_cross_validation(filename,algo):
     return average_cal(overall_accuracy)
 
 
-=======
->>>>>>> e608049541c2249e38ff9ad42b9cc6711def9ee0
 def main(argv):
     print('a')
 
 if __name__ == "__main__":
     results =[]
-    training_data = sys.argv[3]
-    testing_data = sys.argv[4]
-    algorithm = sys.argv[5]
+    training_data = sys.argv[1]
+    testing_data = sys.argv[2]
+    algorithm = sys.argv[3]
     training_input = extract(training_data)
     testing_input = extract(testing_data)
 
     print(ten_fold_cross_validation(training_data,algorithm))
 
-    if algorithm == 'NB':
-        for i in testing_input:
-            results.append(NB(training_input,testing_input))
-    elif 'NN' in algorithm:
-       k = int(algorithm.strip("NN"))
-       for i in testing_input:
-           results.append(KNN(k,training_input,i))
+    # if algorithm == 'NB':
+    #     for i in testing_input:
+    #         results.append(NB(training_input,testing_input))
+    # elif 'NN' in algorithm:
+    #    k = int(algorithm.strip("NN"))
+    #    for i in testing_input:
+    #        results.append(KNN(k,training_input,i))
 
-    for i in results:
-        print(i)
