@@ -4,11 +4,11 @@
 #  https://dzone.com/articles/naive-bayes-tutorial-naive-bayes-classifier-in-pyt
 #  https://www.edureka.co/blog/naive-bayes-tutorial/
 import csv
-import numpy as np 
+import numpy as np
 from math import sqrt
 from math import pi
 from math import exp
-import math 
+import math
 import sys
 import itertools
 from numpy import array
@@ -21,7 +21,7 @@ def convert(x):
     except ValueError:
         if x == 'yes':
             return 1
-        else: 
+        else:
             return 0
 
 def extract(input_file):
@@ -102,7 +102,7 @@ def predict(summaries, row):
             best_label = class_value
         if probability == 0.5:
             return 1
-    
+
     return best_label
 
 def NB(training_input,input):
@@ -117,6 +117,7 @@ def NB(training_input,input):
     for row in input:
         result.append(class_prob(mean_var_of_all_colums_yes,mean_var_of_all_colums_no, row, prob_yes, prob_no,total_rows))
     return(result)
+
 def split(filename):
     a = extract(filename)
     yes_list = []
@@ -132,7 +133,7 @@ def split(filename):
         elif i[-1] == 0:
             no_list.append(i)
             count_of_no +=1
-    
+
     no_of_entries_in_each_fold = count/folds
     no_of_yes_in_each_fold = math.floor(count_of_yes/folds)
     no_of_no_in_each_fold = math.floor(count_of_no/folds)
@@ -190,7 +191,7 @@ def euclidean_distance(point1 , point2):
     dist = math.sqrt(squared_distance_sum)
     return dist
 
-    
+
 def KNN(k,training_data,testing_input):
 
     neighbours= []
@@ -239,11 +240,11 @@ def ten_fold_cross_validation(filename,algo):
     checker = False
     k = 0
     for line in lines[1:]:
-        if line.count(0) == 9 and checker == False:
+        if (line.count(0) == 9 or line.count(0) == 6) and checker == False:
             k+=1
             checker = True
             continue
-        elif line.count(0) == 9 and checker == True:
+        elif (line.count(0) == 9 or line.count(0) == 6) and checker == True:
             checker = False
             continue
         else:
@@ -261,22 +262,23 @@ def ten_fold_cross_validation(filename,algo):
 
         #flatten training_set so that its a row of values only
         training_set = [e for sl in training_set for e in sl]
-        
+
         if algo == 'NB':
-            
+
             internal_results.append(NB(training_set,testing_set))
+            internal_results = [e for sl in internal_results for e in sl]
 
         elif 'NN' in algo:
             k = int(algorithm.strip("NN"))
             for input in testing_set:
                 internal_results.append(KNN(k, training_set, input))
-        
+
         sum_correct = 0
         num_examples = len(internal_results)
-        for i in range(len(internal_results)):
-            if internal_results[i] == 'yes' and actual_result[i] == 1:
+        for s in range(len(internal_results)):
+            if internal_results[s] == 'yes' and actual_result[s] == 1:
                 sum_correct +=1
-            elif internal_results[i] == 'no' and actual_result[i] == 0:
+            elif internal_results[s] == 'no' and actual_result[s] == 0:
                 sum_correct += 1
             else:
                 continue
@@ -284,6 +286,9 @@ def ten_fold_cross_validation(filename,algo):
         accuracy = sum_correct/num_examples
         overall_accuracy.append(accuracy)
         sum_correct = 0
+
+        for f in range(len(actual_result)):
+            input_buckets[i][f].append(actual_result[f])
 
     return average_cal(overall_accuracy)
 
@@ -299,13 +304,15 @@ if __name__ == "__main__":
     training_input = extract(training_data)
     testing_input = extract(testing_data)
 
-    print(ten_fold_cross_validation(training_data,algorithm))
+    # print(ten_fold_cross_validation(training_data,algorithm))
 
-    # if algorithm == 'NB':
-    #     for i in testing_input:
-    #         results.append(NB(training_input,testing_input))
-    # elif 'NN' in algorithm:
-    #    k = int(algorithm.strip("NN"))
-    #    for i in testing_input:
-    #        results.append(KNN(k,training_input,i))
+    if algorithm == 'NB':
+        results.append(NB(training_input,testing_input))
+        results  = [e for sl in results for e in sl]
+    elif 'NN' in algorithm:
+       k = int(algorithm.strip("NN"))
+       for i in testing_input:
+           results.append(KNN(k,training_input,i))
 
+    for i in results:
+        print(i)
