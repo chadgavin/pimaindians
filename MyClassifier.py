@@ -304,15 +304,15 @@ if __name__ == "__main__":
     training_input = extract(training_data)
     testing_input = extract(testing_data)
 
-    # print(ten_fold_cross_validation(training_data,algorithm))
+    print(ten_fold_cross_validation(training_data,algorithm))
 
-    if algorithm == 'NB':
-        results.append(NB(training_input,testing_input))
-        results  = [e for sl in results for e in sl]
-    elif 'NN' in algorithm:
-       k = int(algorithm.strip("NN"))
-       for i in testing_input:
-           results.append(KNN(k,training_input,i))
-
-    for i in results:
-        print(i)
+    # if algorithm == 'NB':
+    #     results.append(NB(training_input,testing_input))
+    #     results  = [e for sl in results for e in sl]
+    # elif 'NN' in algorithm:
+    #    k = int(algorithm.strip("NN"))
+    #    for i in testing_input:
+    #        results.append(KNN(k,training_input,i))
+    #
+    # for i in results:
+    #     print(i)
